@@ -1,12 +1,12 @@
 'use strict'
 
-const { ActionService } = require('../action-service')
+const { ScaffoldingActionService } = require('../scaffolding-action-service')
 
 module.exports = {
   name: 'actions',
 
   setup (context) {
-    const actions = new ActionService(context.bot, context.pluginConfig, context.logger)
+    const actions = new ScaffoldingActionService(context.bot, context.pluginConfig, context.logger)
 
     context.on(context.bot, 'spawn', () => {
       actions.configureMovements()
