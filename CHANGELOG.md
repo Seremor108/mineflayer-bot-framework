@@ -9,6 +9,8 @@
 - Added target reacquisition when the followed player temporarily leaves visibility, respawns, or changes entity id.
 - Added focused tests for command parsing, target resolution, PvP pausing, emergency interruption, and follow resumption.
 - Added complete command and configuration references, refreshed the README, and clarified persistent follow controls and runtime behavior.
+- Fixed the built-in commands plugin export so startup validation receives its required `name` and `setup` fields.
+- Added guarded early-startup disconnect handling so a plugin failure does not produce a second `quit is not a function` exception.
 
 ## 1.5.0
 

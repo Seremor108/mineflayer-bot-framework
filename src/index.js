@@ -4,13 +4,14 @@ const fs = require('node:fs')
 const path = require('node:path')
 const mineflayer = require('mineflayer')
 const { PluginManager } = require('./plugin-manager')
+const { disconnectBot } = require('./bot-lifecycle')
 const tasksPlugin = require('./plugins/tasks')
 const actionsPlugin = require('./plugins/actions')
 const statusEffectsPlugin = require('./plugins/status-effects')
 const teamsPlugin = require('./plugins/teams')
 const pvpPlugin = require('./plugins/pvp')
 const followPlugin = require('./plugins/follow')
-const commandsPlugin = require('./plugins/commands')
+const commandsPlugin = require('./plugins/commands-plugin')
 const socialPlugin = require('./plugins/social')
 const autonomyPlugin = require('./plugins/autonomy')
 const safetyPlugin = require('./plugins/safety')
@@ -123,7 +124,14 @@ async function connect () {
     await currentManager.loadDirectory(USER_PLUGINS_PATH)
   } catch (error) {
     console.error(error)
-    currentBot.quit('Plugin setup failed')
+    try {
+      await currentManager.unloadAll()
+    } catch (cleanupError) {
+      console.error('Plugin cleanup failed:', cleanupError)
+    }
+    if (!disconnectBot(currentBot, 'Plugin setup failed')) {
+      console.error('Could not disconnect the bot after plugin setup failed.')
+    }
   }
 }
 
@@ -143,7 +151,7 @@ async function shutdown (signal) {
   }
 
   if (currentBot) {
-    currentBot.quit('Bot shutting down')
+    disconnectBot(currentBot, 'Bot shutting down')
   } else {
     process.exit(0)
   }
