@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+
+- Added a command-activated persistent player-follow mode.
+- Added `follow`/`followplayer` controls for starting, stopping, toggling, retargeting, changing range, and reporting status.
+- Added interruptible follow tasks that automatically requeue after higher-priority emergency and PvP tasks.
+- Added PvP-aware pausing so follow movement resumes when PvP is no longer active or is explicitly disabled.
+- Added target reacquisition when the followed player temporarily leaves visibility, respawns, or changes entity id.
+- Added focused tests for command parsing, target resolution, PvP pausing, emergency interruption, and follow resumption.
+
 ## 1.5.0
 
 - Added a two-pass pathfinding strategy that first searches for a movement-only route.
