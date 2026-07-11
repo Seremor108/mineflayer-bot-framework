@@ -72,6 +72,15 @@
         "priority": 1100
       }
     },
+    "follow": {
+      "enabled": true,
+      "defaultRange": 2,
+      "minimumRange": 1,
+      "maximumRange": 16,
+      "taskPriority": 10,
+      "pollIntervalMs": 100,
+      "pauseDuringPvp": true
+    },
     "commands": {
       "enabled": true,
       "acceptWhispers": true,

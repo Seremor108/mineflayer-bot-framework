@@ -23,13 +23,14 @@ module.exports = {
     registerBuiltInCommands(commands, tasks, actions, {
       statusEffects: context.getService('statusEffects'),
       teams: context.getService('teams'),
-      pvp: context.getService('pvp')
+      pvp: context.getService('pvp'),
+      follow: context.getService('follow')
     })
   }
 }
 
 function registerBuiltInCommands (commands, tasks, actions, services = {}) {
-  const { statusEffects, teams, pvp } = services
+  const { statusEffects, teams, pvp, follow } = services
   commands.register('help', {
     description: 'List commands or explain one command.',
     usage: '!help [command]',
@@ -120,6 +121,38 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
       )
     }
   })
+
+  if (follow) {
+    commands.register('follow', {
+      aliases: ['followplayer'],
+      description: 'Start, stop, toggle, or inspect persistent player-follow mode.',
+      usage: '!follow [player|me|on|off|toggle|status] [range]',
+      async run ({ args, username }) {
+        const request = parseFollowCommand(args, username)
+
+        if (request.operation === 'status') return formatFollowStatus(follow.getStatus())
+        if (request.operation === 'off') {
+          const stopped = follow.stop(`Follow mode disabled by ${username}.`)
+          return stopped ? 'Follow mode disabled.' : 'Follow mode is already disabled.'
+        }
+        if (request.operation === 'toggle') {
+          if (follow.isActive()) {
+            follow.stop(`Follow mode toggled off by ${username}.`)
+            return 'Follow mode disabled.'
+          }
+          return formatFollowStatus(follow.start(request.target, {
+            range: request.range,
+            requestedBy: username
+          }))
+        }
+
+        return formatFollowStatus(follow.start(request.target, {
+          range: request.range,
+          requestedBy: username
+        }))
+      }
+    })
+  }
 
   commands.register('leftblock', {
     aliases: ['left-click-block', 'punchblock'],
@@ -234,7 +267,6 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
     }
   })
 
-
   if (statusEffects) {
     commands.register('effect', {
       aliases: ['status'],
@@ -302,6 +334,46 @@ function queuedTask (name, run) {
   }
 }
 
+function parseFollowCommand (args, username) {
+  const first = String(args[0] || 'status').trim()
+  const operation = first.toLowerCase()
+
+  if (['status', 'state'].includes(operation)) return { operation: 'status' }
+  if (['off', 'stop', 'disable', 'disabled'].includes(operation)) return { operation: 'off' }
+
+  if (['toggle'].includes(operation)) {
+    const target = normalizeFollowTarget(args[1], username)
+    const range = args[2] == null ? undefined : parsePositiveNumber(args[2])
+    return { operation: 'toggle', target, range }
+  }
+
+  if (['on', 'start', 'enable', 'enabled'].includes(operation)) {
+    const target = normalizeFollowTarget(args[1], username)
+    const range = args[2] == null ? undefined : parsePositiveNumber(args[2])
+    return { operation: 'on', target, range }
+  }
+
+  const target = normalizeFollowTarget(first, username)
+  const range = args[1] == null ? undefined : parsePositiveNumber(args[1])
+  return { operation: 'on', target, range }
+}
+
+function normalizeFollowTarget (value, username) {
+  const target = String(value || username || '').trim()
+  if (!target || target.toLowerCase() === 'me') return String(username || '').trim()
+  return target
+}
+
+function formatFollowStatus (status) {
+  if (!status?.active) return 'Follow mode: off.'
+  const pause = status.pausedReason === 'pvp'
+    ? ' paused while PvP is active'
+    : status.pausedReason === 'target-unavailable'
+      ? ' waiting for the target to become visible'
+      : ''
+  return `Follow mode: on; target: ${status.target}; range: ${status.range}; task: ${status.taskStatus || 'queued'}${pause}.`
+}
+
 function parseBlockPosition (args, usage) {
   requireArgs(args, 3, usage)
   return {
@@ -323,6 +395,12 @@ function parseNonNegativeNumber (value) {
   return number
 }
 
+function parsePositiveNumber (value) {
+  const number = parseFiniteNumber(value)
+  if (number <= 0) throw new Error('Value must be greater than zero.')
+  return number
+}
+
 function parseNonNegativeInteger (value) {
   const number = parseNonNegativeNumber(value)
   if (number < 0) throw new Error('Range cannot be negative.')
@@ -339,4 +417,8 @@ function requireArgs (args, count, usage) {
   if (args.length < count) throw new Error(`Usage: ${usage}`)
 }
 
-module.exports = { registerBuiltInCommands }
+module.exports = {
+  registerBuiltInCommands,
+  parseFollowCommand,
+  formatFollowStatus
+}
