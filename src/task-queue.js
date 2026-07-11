@@ -60,7 +60,7 @@ class TaskQueue extends EventEmitter {
       priority,
       source: spec.source || 'system',
       interruptible: spec.interruptible === true,
-      resumeOnInterrupt: false
+      resumeOnInterrupt: spec.resumeOnInterrupt === true
     })
 
     const current = this.current
