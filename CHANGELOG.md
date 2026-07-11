@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1
+
+- Changed missing-water fire escape failures into a passed task result instead of a thrown task exception.
+- The safety service still logs a warning and may retry after `fireRetryDelayMs`; unrelated escape failures continue to fail normally.
+- Added regression tests for both the passed missing-resource case and unrelated error propagation.
+
 ## 1.6.0
 
 - Added a command-activated persistent player-follow mode.
