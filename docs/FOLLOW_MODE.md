@@ -9,6 +9,7 @@ Direct messages may omit the command prefix:
 ```text
 /msg BarebonesBot follow Alice
 /msg BarebonesBot follow Alice 3
+/msg BarebonesBot follow me
 /msg BarebonesBot follow on
 /msg BarebonesBot follow on Alice 3
 /msg BarebonesBot follow toggle Alice
@@ -27,6 +28,10 @@ Command forms:
 - `follow off`: disable follow mode immediately.
 - `follow status`: report the target, range, task state, and pause reason.
 
+Requested ranges are clamped between `minimumRange` and `maximumRange`. A player does not need to be visible when the command is issued; the mode waits and reacquires them later.
+
+Command access follows the normal `allowedUsers`, direct-message, public-chat, and prefix rules. See [Command reference](COMMANDS.md).
+
 ## Task and interruption behavior
 
 Follow mode is represented by one persistent task with priority `10` by default. It therefore takes precedence over ordinary user tasks and low-priority autonomous work, while remaining below PvP (`100`) and emergency tasks (`1100` and above).
@@ -36,6 +41,12 @@ The task is interruptible and resumable. When PvP or a safety emergency preempts
 When `pauseDuringPvp` is enabled, an active PvP state suppresses follow movement even when no combat task is currently controlling the pathfinder. Disabling PvP with `pvp off`, or otherwise allowing automatic PvP activation to expire, resumes following without requiring another follow command.
 
 If the target is temporarily unavailable, follow mode remains enabled and waits. It reacquires the player case-insensitively when they re-enter visibility, respawn, or receive a new entity id.
+
+### Interaction with queue commands
+
+`stop` and `clear` operate only on ordinary user tasks owned by the sender. They intentionally do not cancel follow mode, because follow is a persistent service task rather than a queued one-shot command.
+
+Use `follow off` to stop following. Retargeting with another `follow <player>` command cancels the old follow task and creates a replacement using the new target and range.
 
 ## Configuration
 
@@ -58,8 +69,14 @@ Options:
 - `minimumRange`: lower clamp for requested ranges.
 - `maximumRange`: upper clamp for requested ranges.
 - `taskPriority`: task-queue priority for follow mode. Keep it below PvP and emergency priorities.
-- `pollIntervalMs`: how often the service checks PvP state and target availability.
+- `pollIntervalMs`: how often the service checks PvP state and target availability; values below 25 ms are clamped.
 - `pauseDuringPvp`: stop follow movement while PvP is active without disabling the follow mode.
+
+See [Configuration reference](CONFIGURATION.md#follow) for the consolidated configuration guide.
+
+## Runtime and restart behavior
+
+Follow state is held in memory. It is not written to `config.json` and does not survive bot disconnects, process restarts, or plugin unloads. A controller must issue another follow command after reconnecting.
 
 ## Limitations
 
