@@ -28,7 +28,9 @@ jobs:
           npm install
 
       - name: Check syntax and configuration
-        run: npm run check
+        run: |
+          npm run check
+          node -e "JSON.parse(require('node:fs').readFileSync('config.example.json', 'utf8'))"
 
       - name: Run tests
         run: npm test
