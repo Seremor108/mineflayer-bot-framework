@@ -106,11 +106,11 @@ module.exports = {
         interruptible: false,
         resumeOnInterrupt: false,
         metadata: { emergency: 'lava-fire', hazard: label },
-        run: ({ signal }) => actions.escapeLavaOrFire(hazard?.position, {
+        run: ({ signal }) => runHeatEscapeTask(actions, hazard?.position, {
           waterSearchRadius: config.waterSearchRadius,
           extinguishTimeoutMs: config.extinguishTimeoutMs,
           escapeDurationMs: config.escapeDurationMs
-        }, signal)
+        }, signal, context.logger)
       }, {
         resumeCurrent: true,
         reason: `Interrupted to escape ${label}.`
@@ -128,6 +128,23 @@ module.exports = {
       activeFallingTask?.cancel('Safety plugin stopped.')
     })
   }
+}
+
+async function runHeatEscapeTask (actions, hazardPosition, options = {}, signal, logger = console) {
+  try {
+    return await actions.escapeLavaOrFire(hazardPosition, options, signal)
+  } catch (error) {
+    if (!isMissingFireExtinguishingResourceError(error)) throw error
+    const message = String(error?.message || error)
+    logger.warn?.(`Fire escape could not extinguish the bot: ${message}`)
+    return `Fire escape passed without extinguishing: ${message}`
+  }
+}
+
+function isMissingFireExtinguishingResourceError (error) {
+  return /no reachable water or water bucket was available to extinguish the fire/i.test(
+    String(error?.message || error || '')
+  )
 }
 
 function findHeatHazard (bot, radius = 2) {
@@ -189,3 +206,5 @@ module.exports.findHeatHazard = findHeatHazard
 module.exports.findFallingBlockHazard = findFallingBlockHazard
 module.exports.decodeFallingBlock = decodeFallingBlock
 module.exports.isFallingBlockEntity = isFallingBlockEntity
+module.exports.runHeatEscapeTask = runHeatEscapeTask
+module.exports.isMissingFireExtinguishingResourceError = isMissingFireExtinguishingResourceError

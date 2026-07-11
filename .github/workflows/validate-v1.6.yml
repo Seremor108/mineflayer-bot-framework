@@ -1,4 +1,4 @@
-name: Validate v1.6
+name: Validate v1.6.1
 
 on:
   push:
@@ -37,19 +37,19 @@ jobs:
 
       - name: Build release archive
         run: |
-          mkdir -p dist/mineflayer-bot-framework-v1.6.0
-          rsync -a ./ dist/mineflayer-bot-framework-v1.6.0/ \
+          mkdir -p dist/mineflayer-bot-framework-v1.6.1
+          rsync -a ./ dist/mineflayer-bot-framework-v1.6.1/ \
             --exclude .git \
             --exclude .github \
             --exclude dist \
             --exclude node_modules \
             --exclude config.json
           cd dist
-          zip -qr mineflayer-bot-framework-v1.6.0.zip mineflayer-bot-framework-v1.6.0
+          zip -qr mineflayer-bot-framework-v1.6.1.zip mineflayer-bot-framework-v1.6.1
 
       - name: Upload release archive
         uses: actions/upload-artifact@v4
         with:
-          name: mineflayer-bot-framework-v1.6.0
-          path: dist/mineflayer-bot-framework-v1.6.0.zip
+          name: mineflayer-bot-framework-v1.6.1
+          path: dist/mineflayer-bot-framework-v1.6.1.zip
           if-no-files-found: error
