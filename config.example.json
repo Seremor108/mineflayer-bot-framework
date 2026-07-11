@@ -92,7 +92,101 @@
     },
     "autonomy": {
       "enabled": true,
-      "tickIntervalMs": 250,
+      "tickIntervalMs": 100,
+      "projectileDodging": {
+        "enabled": true,
+        "checkIntervalMs": 75,
+        "projectileNames": [
+          "arrow",
+          "spectral_arrow",
+          "snowball",
+          "egg",
+          "fireball",
+          "small_fireball",
+          "dragon_fireball"
+        ],
+        "lookAheadTicks": 24,
+        "minimumSpeed": 0.03,
+        "threatRadius": 1.4,
+        "verticalTolerance": 2,
+        "dodgeDistance": 2.25,
+        "dodgeDurationMs": 650,
+        "cooldownMs": 900,
+        "priority": 1400,
+        "sprint": true,
+        "jump": false,
+        "unsafeFloorNames": [
+          "lava",
+          "flowing_lava",
+          "fire",
+          "soul_fire",
+          "magma_block",
+          "cactus"
+        ]
+      },
+      "eating": {
+        "enabled": true,
+        "checkIntervalMs": 500,
+        "hungerThreshold": 16,
+        "targetFood": 19,
+        "priority": -5,
+        "preferBestFood": true,
+        "eatCake": true,
+        "cakeSearchRadius": 12,
+        "maximumBites": 7,
+        "include": [
+          "*"
+        ],
+        "exclude": [
+          "rotten_flesh",
+          "poisonous_potato",
+          "spider_eye",
+          "pufferfish",
+          "chorus_fruit",
+          "golden_apple",
+          "enchanted_golden_apple"
+        ]
+      },
+      "animalInteractions": {
+        "enabled": false,
+        "checkIntervalMs": 1500,
+        "searchRadius": 10,
+        "shearSheep": true,
+        "milkCows": true,
+        "sheepCooldownMs": 300000,
+        "cowCooldownMs": 60000,
+        "interactionDelayMs": 300,
+        "priority": -35
+      },
+      "visibleOreMining": {
+        "enabled": false,
+        "checkIntervalMs": 1000,
+        "searchRadius": 16,
+        "maximumCandidates": 64,
+        "revisitCooldownMs": 60000,
+        "priority": -40,
+        "blockNames": [
+          "coal_ore",
+          "deepslate_coal_ore",
+          "copper_ore",
+          "deepslate_copper_ore",
+          "iron_ore",
+          "deepslate_iron_ore",
+          "gold_ore",
+          "deepslate_gold_ore",
+          "redstone_ore",
+          "deepslate_redstone_ore",
+          "lapis_ore",
+          "deepslate_lapis_ore",
+          "diamond_ore",
+          "deepslate_diamond_ore",
+          "emerald_ore",
+          "deepslate_emerald_ore",
+          "nether_gold_ore",
+          "nether_quartz_ore",
+          "ancient_debris"
+        ]
+      },
       "chestLooting": {
         "enabled": false,
         "searchRadius": 16,
