@@ -86,13 +86,13 @@ test('findNearestAnimal filters by kind, range, and predicate', () => {
     entities: {
       1: { id: 1, name: 'sheep', position: new Vec3(6, 64, 0), isValid: true },
       2: { id: 2, name: 'sheep', position: new Vec3(2, 64, 0), isValid: true, sheared: true },
-      3: { id: 3, name: 'cow', position: new Vec3(1, 64, 0), isValid: true }
+      3: { id: 3, name: 'cow', position: new Vec3(1.5, 64, 0), isValid: true }
     }
   }
 
   const sheep = findNearestAnimal(bot, 'sheep', 10, entity => !entity.sheared)
   assert.equal(sheep.id, 1)
-  assert.equal(findNearestAnimal(bot, 'cow', 0.5), null)
+  assert.equal(findNearestAnimal(bot, 'cow', 1), null)
 })
 
 test('findVisibleOre returns the nearest visible configured ore', () => {
