@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0
+
+- Added a two-pass pathfinding strategy that first searches for a movement-only route.
+- Added automatic fallback to approved scaffold blocks when Mineflayer Pathfinder reports `NoPath`.
+- Added configurable scaffold block preference, placement cost, minimum inventory, and 1x1 tower support.
+- Added automatic restoration of the normal no-placement movement profile after a scaffold-assisted route.
+- Added focused tests for scaffold configuration, inventory counting, error filtering, retry behavior, and profile restoration.
+
 ## 1.4.0
 
 - Added emergency dodging for arrows, spectral arrows, snowballs, eggs, and fireballs using short-horizon trajectory prediction.

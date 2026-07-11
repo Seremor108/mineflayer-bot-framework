@@ -17,9 +17,21 @@
       "canDigWhilePathing": false,
       "allowSprinting": true,
       "allowParkour": false,
-      "allow1by1Towers": false,
       "interactionReach": 4.5,
-      "entityReach": 3
+      "entityReach": 3,
+      "scaffolding": {
+        "enabled": true,
+        "retryOnNoPath": true,
+        "minimumBlocks": 1,
+        "placeCost": 2,
+        "allow1by1Towers": true,
+        "blockNames": [
+          "cobblestone",
+          "cobbled_deepslate",
+          "dirt",
+          "netherrack"
+        ]
+      }
     },
     "status-effects": {
       "enabled": true

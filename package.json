@@ -1,8 +1,8 @@
 {
   "name": "mineflayer-bot-framework",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
-  "description": "Extensible Mineflayer framework with queued actions, social behavior, autonomy, safety interrupts, and PvP.",
+  "description": "Extensible Mineflayer framework with queued actions, social behavior, autonomy, safety interrupts, PvP, and scaffold-assisted pathfinding.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
