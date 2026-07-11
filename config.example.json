@@ -1,0 +1,177 @@
+{
+  "host": "localhost",
+  "port": 25565,
+  "username": "BarebonesBot",
+  "auth": "offline",
+  "version": false,
+  "commandPrefix": "!",
+  "allowedUsers": [
+    "YourMinecraftName"
+  ],
+  "plugins": {
+    "tasks": {
+      "enabled": true
+    },
+    "actions": {
+      "enabled": true,
+      "canDigWhilePathing": false,
+      "allowSprinting": true,
+      "allowParkour": false,
+      "allow1by1Towers": false,
+      "interactionReach": 4.5,
+      "entityReach": 3
+    },
+    "status-effects": {
+      "enabled": true
+    },
+    "teams": {
+      "enabled": true,
+      "useScoreboardTeams": true,
+      "customTeammates": []
+    },
+    "pvp": {
+      "enabled": true,
+      "entryPoints": {
+        "attacked": true,
+        "nearbyNonTeammate": false,
+        "always": false
+      },
+      "activationDurationMs": 15000,
+      "nearbyEntryRadius": 6,
+      "targetSearchRadius": 24,
+      "attackRadius": 3,
+      "attackCooldownMs": 625,
+      "attackPlayers": true,
+      "attackHostileMobs": true,
+      "equipBestMeleeWeapon": true,
+      "smoothAim": {
+        "stepMs": 50,
+        "maxRadiansPerStep": 0.18
+      },
+      "bow": {
+        "enabled": true,
+        "chargeMs": 1000,
+        "maximumRange": 24,
+        "preferredRange": 12,
+        "aimStepRadians": 0.12
+      },
+      "retreat": {
+        "durationMs": 1800,
+        "priority": 1100
+      }
+    },
+    "commands": {
+      "enabled": true,
+      "acceptWhispers": true,
+      "acceptPublic": false,
+      "whisperPrefixOptional": true,
+      "notifyTaskCompletion": true
+    },
+    "social": {
+      "enabled": true,
+      "tickIntervalMs": 150,
+      "stareBack": {
+        "enabled": true,
+        "maxDistance": 12,
+        "stareAngleDegrees": 12,
+        "onlyWhenIdle": true,
+        "aimStepRadians": 0.1
+      },
+      "mimicRepeatedActions": {
+        "enabled": true,
+        "threshold": 3,
+        "windowMs": 2500,
+        "responseCooldownMs": 5000,
+        "responseRepetitions": 3,
+        "pulseMs": 180,
+        "gapMs": 100,
+        "botLookAngleDegrees": 22,
+        "jumpRiseThreshold": 0.2,
+        "jumpResetMs": 500
+      }
+    },
+    "autonomy": {
+      "enabled": true,
+      "tickIntervalMs": 250,
+      "chestLooting": {
+        "enabled": false,
+        "searchRadius": 16,
+        "checkIntervalMs": 1500,
+        "revisitCooldownMs": 300000,
+        "blockNames": [
+          "chest",
+          "trapped_chest"
+        ],
+        "include": [
+          "diamond*",
+          "iron_ingot",
+          "gold_ingot",
+          "emerald",
+          "*_sword",
+          "*_chestplate",
+          "*_leggings",
+          "*_helmet",
+          "*_boots",
+          "bow",
+          "arrow",
+          "bread",
+          "cooked_*",
+          "golden_apple"
+        ],
+        "exclude": [],
+        "maxPerStack": null
+      },
+      "inventoryToss": {
+        "enabled": false,
+        "checkIntervalMs": 500,
+        "minimumFreeSlots": 1,
+        "include": [
+          "rotten_flesh",
+          "poisonous_potato",
+          "spider_eye",
+          "dirt",
+          "cobblestone"
+        ],
+        "exclude": [
+          "*_sword",
+          "*_pickaxe",
+          "*_axe"
+        ]
+      }
+    },
+    "safety": {
+      "enabled": true,
+      "checkIntervalMs": 100,
+      "fireRetryDelayMs": 2000,
+      "avoidLavaAndFire": true,
+      "ignoreHeatWithFireResistance": true,
+      "heatHazardRadius": 2,
+      "waterSearchRadius": 12,
+      "extinguishTimeoutMs": 8000,
+      "escapeDurationMs": 1800,
+      "emergencyPriority": 1200,
+      "fallingBlocks": {
+        "enabled": true,
+        "horizontalRadius": 1.35,
+        "maxVerticalDistance": 12,
+        "dodgeDurationMs": 1000,
+        "priority": 1300,
+        "blockNames": [
+          "sand",
+          "red_sand",
+          "anvil",
+          "chipped_anvil",
+          "damaged_anvil"
+        ]
+      }
+    },
+    "hello": {
+      "enabled": false,
+      "message": "Hello from a custom plugin!"
+    }
+  },
+  "reconnect": {
+    "enabled": true,
+    "delayMs": 5000
+  }
+}
