@@ -1,0 +1,53 @@
+name: Validate v1.5
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies from the public registry
+        run: |
+          rm -f package-lock.json
+          npm install
+
+      - name: Check syntax and configuration
+        run: npm run check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build release archive
+        run: |
+          mkdir -p dist/mineflayer-bot-framework-v1.5.0
+          rsync -a ./ dist/mineflayer-bot-framework-v1.5.0/ \
+            --exclude .git \
+            --exclude .github \
+            --exclude dist \
+            --exclude node_modules \
+            --exclude config.json
+          cd dist
+          zip -qr mineflayer-bot-framework-v1.5.0.zip mineflayer-bot-framework-v1.5.0
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mineflayer-bot-framework-v1.5.0
+          path: dist/mineflayer-bot-framework-v1.5.0.zip
+          if-no-files-found: error
