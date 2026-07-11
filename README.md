@@ -1,6 +1,6 @@
 # Mineflayer Bot Framework
 
-A small CommonJS Mineflayer project with lifecycle plugins, direct-message commands, serialized tasks, pathfinding, autonomous inventory behavior, emergency preemption, social reactions, and a configurable PvP controller.
+A small CommonJS Mineflayer project with lifecycle plugins, direct-message commands, serialized tasks, scaffold-assisted pathfinding, autonomous inventory behavior, emergency preemption, social reactions, and a configurable PvP controller.
 
 ## Requirements
 
@@ -70,16 +70,44 @@ The `tasks` service executes one task at a time. Every task receives an `AbortSi
 
 Default priority bands are:
 
+- projectile dodge: `1400`
 - falling-block dodge: `1300`
 - lava/fire escape: `1200`
 - unarmed retreat: `1100`
 - PvP engagement: `100`
 - user commands: `0`
+- automatic eating: `-5`
 - social responses: `-10`
 - inventory disposal: `-20`
 - chest looting: `-30`
+- animal interactions: `-35`
+- visible ore mining: `-40`
 
 Autonomous tasks therefore wait for normal user work unless a genuine safety or combat entry condition preempts it.
+
+## Scaffold-assisted pathfinding
+
+Pathfinding now uses a two-pass strategy. The first search disables block placement and tries to reach the goal through ordinary movement. Only when Mineflayer Pathfinder reports `NoPath` does the bot retry with approved scaffold blocks from its inventory.
+
+```json
+"scaffolding": {
+  "enabled": true,
+  "retryOnNoPath": true,
+  "minimumBlocks": 1,
+  "placeCost": 2,
+  "allow1by1Towers": true,
+  "blockNames": [
+    "cobblestone",
+    "cobbled_deepslate",
+    "dirt",
+    "netherrack"
+  ]
+}
+```
+
+The ordered `blockNames` list controls which carried blocks Pathfinder may place and their preference. `placeCost` encourages routes that use fewer blocks, while `allow1by1Towers` permits vertical pillaring during the fallback route. The normal no-placement movement profile is restored after success, failure, or interruption.
+
+`minimumBlocks` decides whether the fallback may start; it does not reserve that many blocks. Keep valuable or server-protected blocks out of the list. See [the scaffold pathfinding guide](docs/PATHFINDING_SCAFFOLDING.md) for configuration details and limitations.
 
 ## Social behaviors
 
@@ -88,6 +116,14 @@ Autonomous tasks therefore wait for normal user work unless a genuine safety or 
 `plugins.social.mimicRepeatedActions` watches players the bot is looking at. After the configured number of repeated sneak, jump, or shield-block actions within a time window, the bot queues the corresponding repeated response.
 
 Sneaking uses Mineflayer's crouch events. Shield use is inferred from living-entity metadata and equipped items. Remote jumping is inferred from upward movement because servers do not send another player's control-state input directly; stair movement and unusual server movement can therefore produce false positives.
+
+## Autonomous survival and utility behavior
+
+The autonomy plugin can dodge incoming projectiles, eat safe configured food or nearby cake, shear sheep, milk cows, mine visible configured ores, loot chests, and dispose of configured items when the inventory is full.
+
+Projectile dodging uses short-horizon position and velocity prediction. It rejects side-step directions that lack solid flooring or lead through configured hazardous blocks. As an emergency task, it may interrupt normal work and then allow an interruptible user task to restart.
+
+Eating is enabled by default and starts below the configured hunger threshold. Animal interactions and visible-ore mining are disabled by default. All non-emergency autonomy work waits for an idle queue and uses cooldown tracking to avoid repeatedly targeting the same entity or block.
 
 ## Autonomous chest looting
 
@@ -200,7 +236,7 @@ await actions.smoothAimAtEntity(target, { durationMs: 300 }, signal)
 await actions.fireBowAt(target, { chargeMs: 1000 }, signal)
 ```
 
-Pathfinding does not break blocks by default. A block left-click is a short start/cancel digging interaction; instantly breakable blocks may still break.
+Pathfinding does not break blocks by default. It also does not place blocks on the initial route attempt; scaffold placement is only enabled for the configured `NoPath` fallback. A block left-click is a short start/cancel digging interaction; instantly breakable blocks may still break.
 
 ## Plugin order and services
 
@@ -246,24 +282,27 @@ npm run check
 npm test
 ```
 
-The test suite covers task interruption, command parsing, plugin cleanup, item rules, effects, teammates, social look/shield detection, falling/heat detection, and PvP target filtering.
+The test suite covers task interruption, command parsing, plugin cleanup, item rules, effects, teammates, social look/shield detection, projectile/falling/heat safety, autonomous animals/ores/food, PvP target filtering, and scaffold pathfinding fallback behavior.
 
 ## Structure
 
 ```text
-plugins/                         User plugins
-src/index.js                     Connection and lifecycle
-src/plugin-manager.js            Plugin loading and shared services
-src/task-queue.js                Priority queue and interruption
-src/action-service.js            Movement, interaction, aiming, equipment, loot
-src/status-effect-service.js     Status-effect resolution/checking
-src/team-service.js              Scoreboard/custom teammate logic
-src/combat-service.js            PvP entry, targeting, melee, bow, retreat
-src/social-service.js            Stare-back and repeated-action responses
-src/autonomy-service.js          Chest looting and inventory disposal
-src/plugins/                     Built-in plugin adapters
+plugins/                              User plugins
+src/index.js                          Connection and lifecycle
+src/plugin-manager.js                 Plugin loading and shared services
+src/task-queue.js                     Priority queue and interruption
+src/action-service.js                 Movement, interaction, aiming, equipment, loot
+src/scaffolding-action-service.js     Two-pass pathfinding and scaffold fallback
+src/status-effect-service.js          Status-effect resolution/checking
+src/team-service.js                   Scoreboard/custom teammate logic
+src/combat-service.js                 PvP entry, targeting, melee, bow, retreat
+src/social-service.js                 Stare-back and repeated-action responses
+src/autonomy-service.js               Autonomous task scheduling and cooldowns
+src/autonomy-behaviors.js             Projectile, animal, ore, and food actions
+src/plugins/                          Built-in plugin adapters
+docs/PATHFINDING_SCAFFOLDING.md       Scaffold configuration and limitations
 ```
 
 ## Limitations
 
-Server anticheat, latency, permissions, custom protocol behavior, and server plugins can change how movement and interaction appear. This framework does not contain advanced combat prediction, projectile ballistics, shield timing, chest ownership rules, or grief-prevention awareness. Test autonomous looting and PvP only where they are allowed.
+Server anticheat, latency, permissions, protected regions, custom protocol behavior, and server plugins can change how movement and interaction appear. Scaffold routes may consume all configured blocks needed by the selected route and do not understand land ownership or grief-prevention rules. Test autonomous placement, looting, mining, and PvP only where they are allowed.
