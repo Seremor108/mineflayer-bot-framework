@@ -1,6 +1,5 @@
 'use strict'
 
-const { Movements } = require('mineflayer-pathfinder')
 const { ActionService, normalizeItemQuery } = require('./action-service')
 const { throwIfAborted } = require('./task-queue')
 
@@ -40,7 +39,7 @@ class ScaffoldingActionService extends ActionService {
     this.resolvedScaffoldingBlockNames = resolved.map(candidate => candidate.name)
     scaffolding.scafoldingBlocks = [...this.scaffoldingItemIds]
     scaffolding.allow1by1towers = this.scaffoldingConfig.allow1by1Towers !== false
-    scaffolding.placeCost = Math.max(0, Number(this.scaffoldingConfig.placeCost) || 2)
+    scaffolding.placeCost = nonNegativeNumber(this.scaffoldingConfig.placeCost, 2)
 
     this.movementProfiles.normal = normal
     this.movementProfiles.scaffolding = scaffolding
@@ -68,7 +67,7 @@ class ScaffoldingActionService extends ActionService {
       if (!this.shouldRetryWithScaffolding(error)) throw error
 
       const available = this.availableScaffoldingBlockCount()
-      const minimum = Math.max(1, Math.floor(Number(this.scaffoldingConfig.minimumBlocks) || 1))
+      const minimum = positiveInteger(this.scaffoldingConfig.minimumBlocks, 1)
       if (available < minimum) {
         const unavailable = new Error(
           `No movement-only path was found, and scaffolding requires at least ${minimum} configured block${minimum === 1 ? '' : 's'}; ${available} available.`
@@ -132,9 +131,9 @@ class ScaffoldingActionService extends ActionService {
       configuredBlockNames: Object.freeze([...this.scaffoldingConfig.blockNames]),
       resolvedBlockNames: Object.freeze([...this.resolvedScaffoldingBlockNames]),
       availableBlocks: this.availableScaffoldingBlockCount(),
-      minimumBlocks: Math.max(1, Math.floor(Number(this.scaffoldingConfig.minimumBlocks) || 1)),
+      minimumBlocks: positiveInteger(this.scaffoldingConfig.minimumBlocks, 1),
       allow1by1Towers: this.scaffoldingConfig.allow1by1Towers !== false,
-      placeCost: Math.max(0, Number(this.scaffoldingConfig.placeCost) || 2)
+      placeCost: nonNegativeNumber(this.scaffoldingConfig.placeCost, 2)
     })
   }
 }
@@ -187,16 +186,14 @@ function isNoPathError (error) {
   ))
 }
 
-function createMovementProfile (bot, config = {}) {
-  const movements = new Movements(bot)
-  movements.canDig = Boolean(config.canDigWhilePathing)
-  movements.allowSprinting = config.allowSprinting !== false
-  movements.allowParkour = Boolean(config.allowParkour)
-  movements.allow1by1towers = Boolean(config.allow1by1Towers)
-  if (Number.isFinite(config.maxDropDown)) {
-    movements.maxDropDown = Math.max(0, Math.floor(config.maxDropDown))
-  }
-  return movements
+function positiveInteger (value, fallback) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : fallback
+}
+
+function nonNegativeNumber (value, fallback) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback
 }
 
 module.exports = {
@@ -205,6 +202,5 @@ module.exports = {
   buildScaffoldingConfig,
   resolveScaffoldingItems,
   countScaffoldingItems,
-  isNoPathError,
-  createMovementProfile
+  isNoPathError
 }
