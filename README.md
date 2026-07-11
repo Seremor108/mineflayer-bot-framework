@@ -1,6 +1,6 @@
 # Mineflayer Bot Framework
 
-A small CommonJS Mineflayer project with lifecycle plugins, direct-message commands, serialized tasks, scaffold-assisted pathfinding, autonomous inventory behavior, emergency preemption, social reactions, and a configurable PvP controller.
+A CommonJS Mineflayer project with lifecycle plugins, direct-message commands, serialized and interruptible tasks, persistent player following, scaffold-assisted pathfinding, autonomous utility behavior, safety preemption, social reactions, and configurable PvP.
 
 ## Requirements
 
@@ -18,22 +18,36 @@ npm start
 
 On Windows Command Prompt, use `copy config.example.json config.json` instead of `cp`.
 
-For an offline-mode server, use `"auth": "offline"`. For a Microsoft account, use `"auth": "microsoft"` and put the account email in `username`.
+For an offline-mode server, use `"auth": "offline"`. For a Microsoft account, use `"auth": "microsoft"` and place the account email in `username`.
 
-## Direct-message commands
+## Documentation
+
+- [Complete command reference](docs/COMMANDS.md)
+- [Complete configuration reference](docs/CONFIGURATION.md)
+- [Follow player mode](docs/FOLLOW_MODE.md)
+- [Scaffold-assisted pathfinding](docs/PATHFINDING_SCAFFOLDING.md)
+- [Changelog](CHANGELOG.md)
+
+The live `help` command remains authoritative for a running bot because disabled plugins do not register commands.
+
+## Commands
 
 Private messages are accepted by default and may omit the command prefix:
 
 ```text
 /msg BarebonesBot goto 100 64 -20
 /msg BarebonesBot !goto 100 64 -20
+/msg BarebonesBot follow Alice 3
 ```
 
-Restrict control with `allowedUsers`. An empty list allows any player to command the bot. Public commands remain disabled unless `plugins.commands.acceptPublic` is enabled.
+Restrict command access with `allowedUsers`. An empty list permits any player. Public commands remain disabled unless `plugins.commands.acceptPublic` is enabled.
 
-Quoted arguments are supported, such as `equip "diamond sword" hand`.
+Quoted arguments are supported:
 
-### Commands
+```text
+equip "diamond sword" hand
+effect "Fire Resistance"
+```
 
 | Command | Purpose |
 | --- | --- |
@@ -44,10 +58,11 @@ Quoted arguments are supported, such as `equip "diamond sword" hand`.
 | `stop` | Cancel your current user task. |
 | `clear` | Clear your pending user tasks. |
 | `goto <x> <y> <z> [range]` | Pathfind to coordinates. |
-| `come [range]` | Pathfind to the sender. |
+| `come [range]` | Pathfind once to the sender. |
+| `follow [player\|me\|on\|off\|toggle\|status] [range]` | Control persistent player-follow mode. |
 | `leftblock <x> <y> <z>` | Left-click a block once. |
 | `rightblock <x> <y> <z>` | Right-click a block. |
-| `leftentity <selector>` | Attack an allowed PvP target; blocked while PvP is inactive. |
+| `leftentity <selector>` | Attack an allowed PvP target. |
 | `rightentity <selector>` | Right-click an entity. |
 | `jump [milliseconds]` | Hold jump temporarily. |
 | `sneak [milliseconds\|on\|off]` | Sneak temporarily or toggle it. |
@@ -55,18 +70,16 @@ Quoted arguments are supported, such as `equip "diamond sword" hand`.
 | `armor [best\|item]` | Equip the best armor or a named piece. |
 | `effect <name\|id>` | Check whether a status effect is active. |
 | `pvp [on\|off\|auto\|status]` | Override or inspect PvP mode. |
-| `teammates near` | Replace custom teammates with players within seven blocks. |
-| `teammates list` | List custom teammates. |
-| `teammates clear` | Clear custom teammates. |
-| `social [stare\|mimic] [on\|off\|status]` | Toggle social behaviors at runtime. |
+| `teammates <near\|list\|clear> [radius]` | Manage custom teammates. |
+| `social [stare\|mimic] [on\|off\|status]` | Toggle social behaviors. |
 | `loot [on\|off\|status]` | Toggle autonomous chest looting. |
-| `tossjunk [on\|off\|status]` | Toggle full-inventory item disposal. |
+| `tossjunk [on\|off\|status]` | Toggle full-inventory disposal. |
 
 Entity selectors accept a player name, entity name/display name, `player:Name`, `id:123`, or a numeric entity id.
 
 ## Task queue and interruption
 
-The `tasks` service executes one task at a time. Every task receives an `AbortSignal`, and higher-priority tasks can interrupt a lower-priority interruptible task. User tasks are configured to restart from their beginning after an emergency finishes.
+The `tasks` service executes one task at a time. Every task receives an `AbortSignal`. Higher-priority tasks can interrupt lower-priority interruptible tasks, and selected tasks can restart from the beginning afterward.
 
 Default priority bands are:
 
@@ -75,6 +88,7 @@ Default priority bands are:
 - lava/fire escape: `1200`
 - unarmed retreat: `1100`
 - PvP engagement: `100`
+- persistent follow mode: `10`
 - user commands: `0`
 - automatic eating: `-5`
 - social responses: `-10`
@@ -83,11 +97,36 @@ Default priority bands are:
 - animal interactions: `-35`
 - visible ore mining: `-40`
 
-Autonomous tasks therefore wait for normal user work unless a genuine safety or combat entry condition preempts it.
+Follow mode therefore supersedes ordinary queued work but yields to PvP and genuine safety emergencies. Low-priority autonomy waits behind user-controlled work.
+
+`stop` and `clear` affect only tasks owned by the sending user. Persistent systems have their own controls, such as `follow off` and `pvp off`.
+
+## Follow player mode
+
+Version 1.6.0 adds a command-activated persistent follow service:
+
+```text
+/msg BarebonesBot follow Alice
+/msg BarebonesBot follow Alice 3
+/msg BarebonesBot follow me
+/msg BarebonesBot follow off
+/msg BarebonesBot follow status
+```
+
+The service uses Mineflayer Pathfinder’s dynamic `GoalFollow`. It retains the target when the player temporarily disappears or respawns and reacquires them case-insensitively.
+
+Follow mode is interruptible and resumable. Higher-priority PvP or emergency tasks can preempt it, after which the same follow task restarts. With `pauseDuringPvp` enabled, follow movement also pauses while PvP is active even if no combat task currently owns the pathfinder; `pvp off` or expiry of automatic PvP resumes it.
+
+See [Follow player mode](docs/FOLLOW_MODE.md).
 
 ## Scaffold-assisted pathfinding
 
-Pathfinding now uses a two-pass strategy. The first search disables block placement and tries to reach the goal through ordinary movement. Only when Mineflayer Pathfinder reports `NoPath` does the bot retry with approved scaffold blocks from its inventory.
+Pathfinding uses a two-pass strategy:
+
+1. Try a movement-only route with block placement disabled.
+2. If Pathfinder reports `NoPath`, inspect the inventory for approved scaffold blocks.
+3. Retry with block placement and optional 1×1 towers.
+4. Restore the normal no-placement movement profile afterward.
 
 ```json
 "scaffolding": {
@@ -105,155 +144,94 @@ Pathfinding now uses a two-pass strategy. The first search disables block placem
 }
 ```
 
-The ordered `blockNames` list controls which carried blocks Pathfinder may place and their preference. `placeCost` encourages routes that use fewer blocks, while `allow1by1Towers` permits vertical pillaring during the fallback route. The normal no-placement movement profile is restored after success, failure, or interruption.
-
-`minimumBlocks` decides whether the fallback may start; it does not reserve that many blocks. Keep valuable or server-protected blocks out of the list. See [the scaffold pathfinding guide](docs/PATHFINDING_SCAFFOLDING.md) for configuration details and limitations.
-
-## Social behaviors
-
-`plugins.social.stareBack` makes the bot smoothly turn toward a nearby player whose view direction points at the bot. By default it only does this while the task queue is idle, so it does not steer against pathfinding or combat.
-
-`plugins.social.mimicRepeatedActions` watches players the bot is looking at. After the configured number of repeated sneak, jump, or shield-block actions within a time window, the bot queues the corresponding repeated response.
-
-Sneaking uses Mineflayer's crouch events. Shield use is inferred from living-entity metadata and equipped items. Remote jumping is inferred from upward movement because servers do not send another player's control-state input directly; stair movement and unusual server movement can therefore produce false positives.
+Ordinary reachable routes do not consume blocks. Keep valuable or server-protected blocks out of `blockNames`. See [Scaffold-assisted pathfinding](docs/PATHFINDING_SCAFFOLDING.md).
 
 ## Autonomous survival and utility behavior
 
-The autonomy plugin can dodge incoming projectiles, eat safe configured food or nearby cake, shear sheep, milk cows, mine visible configured ores, loot chests, and dispose of configured items when the inventory is full.
+The autonomy plugin can:
 
-Projectile dodging uses short-horizon position and velocity prediction. It rejects side-step directions that lack solid flooring or lead through configured hazardous blocks. As an emergency task, it may interrupt normal work and then allow an interruptible user task to restart.
+- dodge incoming arrows, spectral arrows, snowballs, eggs, and fireballs;
+- eat configured inventory food or nearby placed cake when hungry;
+- shear eligible sheep and milk cows;
+- mine configured visible ores;
+- loot configured items from nearby chests; and
+- dispose of configured items when inventory is full.
 
-Eating is enabled by default and starts below the configured hunger threshold. Animal interactions and visible-ore mining are disabled by default. All non-emergency autonomy work waits for an idle queue and uses cooldown tracking to avoid repeatedly targeting the same entity or block.
+Projectile dodging is an emergency task and may interrupt normal work. Other autonomy tasks use negative priorities and normally wait for an idle queue. Every behavior has independent configuration, cooldowns, ranges, and enable flags.
 
-## Autonomous chest looting
+Chest looting, animal interactions, visible-ore mining, and inventory disposal are disabled by default. Keep item rules conservative because the bot cannot infer ownership, personal value, or server-specific restrictions.
 
-Chest looting is off by default:
+See [Configuration reference](docs/CONFIGURATION.md#autonomy).
 
-```json
-"chestLooting": {
-  "enabled": false,
-  "searchRadius": 16,
-  "revisitCooldownMs": 300000,
-  "blockNames": ["chest", "trapped_chest"],
-  "include": ["diamond*", "iron_ingot", "gold_ingot", "emerald", "*_sword", "bow", "arrow"],
-  "exclude": ["wooden_*"],
-  "maxPerStack": null
-}
-```
+## Safety
 
-Patterns use `*` wildcards after item names are normalized to lower-case underscore form. `include: ["*"]` loots everything. Exclusions win over inclusions. The bot remembers chest positions for the configured cooldown to avoid repeatedly reopening the same chest.
+The safety plugin handles two emergency classes:
 
-## Full-inventory disposal
+- falling sand, red sand, anvils, and generic falling-block hazards;
+- lava, fire blocks, and the bot being on fire while Fire Resistance is absent.
 
-Automatic tossing is also off by default:
+Heat escape can seek nearby water or use a carried water bucket. Set `ignoreHeatWithFireResistance` to `false` to avoid heat even while protected.
 
-```json
-"inventoryToss": {
-  "enabled": false,
-  "minimumFreeSlots": 1,
-  "include": ["rotten_flesh", "poisonous_potato", "spider_eye", "dirt", "cobblestone"],
-  "exclude": ["*_sword", "*_pickaxe", "*_axe"]
-}
-```
+Projectile dodging lives in autonomy but uses the highest default emergency priority.
 
-It only starts when the inventory has no empty slots and only tosses items matching the configured rules. Keep the include list conservative; the bot cannot know an item's personal or server-specific value.
+## Social behavior
 
-## Status effects and heat safety
+`plugins.social.stareBack` smoothly turns toward a nearby player whose view appears directed at the bot.
 
-The `statusEffects` service resolves effect names across protocol versions and checks `entity.effects`:
+`plugins.social.mimicRepeatedActions` watches a player the bot is looking at. After repeated sneak, jump, or shield-block observations, it queues matching repeated actions.
 
-```js
-const effects = context.requireService('statusEffects')
-
-if (effects.has('Fire Resistance')) {
-  // Fire Resistance is currently active on the bot.
-}
-```
-
-The `effect` command exposes a basic chat check.
-
-The safety plugin scans for lava, fire blocks, and the bot's on-fire state. When Fire Resistance is absent, it inserts an emergency escape task. It attempts to move away from lava/fire and, when burning, enter nearby water or place a carried water bucket. Set `ignoreHeatWithFireResistance` to `false` to avoid heat even while protected.
-
-## Falling anvils and sand
-
-The safety plugin watches falling-block entities above the bot. It decodes the falling block state when the protocol exposes it and defaults to sand, red sand, and the three anvil variants. A detected configured block within the horizontal/vertical danger envelope preempts the current task and makes the bot sprint-jump away.
-
-Older or custom protocol implementations may not expose a decodable block state. Such an entity is treated as a generic falling-block hazard rather than ignored.
+Remote jump and shield states are inferred from movement and metadata, so custom servers or unusual movement can cause false positives.
 
 ## PvP
 
-PvP attacks only valid targets while PvP mode is active. Valid defaults are:
+PvP attacks only valid targets while its mode is active. Valid defaults are:
 
-- players not recognized as teammates
-- hostile mobs
+- players not recognized as teammates;
+- hostile mobs.
 
-Passive mobs and teammates are excluded. The action service also rejects `leftentity` attacks while PvP is inactive.
+Passive mobs and teammates are excluded. Three automatic entry points are configurable: being attacked, a nearby non-teammate, and always on.
 
-Three configurable entry points are available under `plugins.pvp.entryPoints`:
+Melee combat dynamically follows the locked target, uses smoothed aim, equips a suitable weapon when configured, and swings inside the default three-block radius. When a bow is already equipped, combat charges, continuously aims, and releases it. An attacked bot with no usable weapon starts an emergency retreat.
 
-```json
-"entryPoints": {
-  "attacked": true,
-  "nearbyNonTeammate": false,
-  "always": false
-}
-```
-
-`attacked` activates PvP for `activationDurationMs`. On newer protocols Mineflayer can provide a damage source; on older protocols the framework infers the attacker from a recent nearby arm swing. `nearbyNonTeammate` activates when another player outside the teammate set enters `nearbyEntryRadius`. `always` keeps PvP eligible whenever a valid target is visible.
-
-Melee combat dynamically follows the locked target, smoothly turns toward it, and calls `bot.attack(target, true)` inside the configured radius, which defaults to three blocks. It can automatically equip the best sword, axe, trident, or mace in the inventory.
-
-When a bow is already equipped, combat holds use-item for `bow.chargeMs`, continuously smooth-aims at the locked target, and releases to fire. This is direct line-of-sight aiming, not a full projectile/latency solver.
-
-When the bot is attacked without a sword, axe, trident, mace, or bow available, it inserts an emergency retreat task instead of trying to punch the attacker.
-
-## Teammates and 1.8.9 custom teams
-
-The teammate service combines two sources:
-
-- normal Minecraft scoreboard teams, when available
-- a session-local custom teammate set
-
-For servers with a custom teams plugin that does not populate vanilla scoreboard teams, send:
+For custom/legacy team plugins that do not expose vanilla scoreboard teams:
 
 ```text
 /msg BarebonesBot teammates near
 ```
 
-The current custom list is immediately replaced with every visible player within seven blocks. The list is intentionally not persisted across restarts.
+This immediately replaces the session-local custom teammate list with visible players inside seven blocks by default.
 
-## Action service
+## Status effects
 
-Plugins can use the abort-aware `actions` service directly:
+The `statusEffects` service resolves effect names across protocol versions and reads `entity.effects`:
 
 ```js
-const actions = context.requireService('actions')
+const effects = context.requireService('statusEffects')
 
-await actions.gotoPosition({ x: 10, y: 64, z: 10, range: 1 }, signal)
-await actions.rightClickBlock({ x: 11, y: 64, z: 10 }, {}, signal)
-await actions.equipArmor('best', signal)
-await actions.smoothAimAtEntity(target, { durationMs: 300 }, signal)
-await actions.fireBowAt(target, { chargeMs: 1000 }, signal)
+if (effects.has('Fire Resistance')) {
+  // Fire Resistance is active.
+}
 ```
 
-Pathfinding does not break blocks by default. It also does not place blocks on the initial route attempt; scaffold placement is only enabled for the configured `NoPath` fallback. A block left-click is a short start/cancel digging interaction; instantly breakable blocks may still break.
+The `effect` command exposes the same basic check to chat.
 
 ## Plugin order and services
 
-Built-ins load in this dependency order:
+Built-ins load in dependency order:
 
 1. `tasks`
 2. `actions`
 3. `status-effects`
 4. `teams`
 5. `pvp`
-6. `commands`
-7. `social`
-8. `autonomy`
-9. `safety`
-10. user plugins from `plugins/`, alphabetically
+6. `follow`
+7. `commands`
+8. `social`
+9. `autonomy`
+10. `safety`
+11. user plugins from `plugins/`, alphabetically
 
-A user plugin exports `{ name, setup(context) }`. Tracked listeners and cleanup functions are removed during disconnect/shutdown.
+A user plugin exports `{ name, setup(context) }`. Tracked listeners and cleanup functions are removed during disconnect or shutdown.
 
 ```js
 'use strict'
@@ -273,7 +251,7 @@ module.exports = {
 }
 ```
 
-Context provides `bot`, complete `config`, frozen `pluginConfig`, a prefixed `logger`, tracked `on`/`once`, `addCleanup`, and shared-service methods `provideService`, `getService`, and `requireService`.
+Context provides `bot`, complete `config`, frozen `pluginConfig`, a prefixed logger, tracked `on`/`once`, `addCleanup`, and shared-service methods `provideService`, `getService`, and `requireService`.
 
 ## Development
 
@@ -282,7 +260,7 @@ npm run check
 npm test
 ```
 
-The test suite covers task interruption, command parsing, plugin cleanup, item rules, effects, teammates, social look/shield detection, projectile/falling/heat safety, autonomous animals/ores/food, PvP target filtering, and scaffold pathfinding fallback behavior.
+The suite covers task interruption and resumption, command parsing, plugin cleanup, item rules, effects, teammates, follow mode, social detection, projectile/falling/heat safety, autonomous animals/ores/food, PvP filtering, and scaffold fallback.
 
 ## Structure
 
@@ -293,6 +271,7 @@ src/plugin-manager.js                 Plugin loading and shared services
 src/task-queue.js                     Priority queue and interruption
 src/action-service.js                 Movement, interaction, aiming, equipment, loot
 src/scaffolding-action-service.js     Two-pass pathfinding and scaffold fallback
+src/follow-service.js                 Persistent player-follow state and task
 src/status-effect-service.js          Status-effect resolution/checking
 src/team-service.js                   Scoreboard/custom teammate logic
 src/combat-service.js                 PvP entry, targeting, melee, bow, retreat
@@ -300,9 +279,14 @@ src/social-service.js                 Stare-back and repeated-action responses
 src/autonomy-service.js               Autonomous task scheduling and cooldowns
 src/autonomy-behaviors.js             Projectile, animal, ore, and food actions
 src/plugins/                          Built-in plugin adapters
+docs/COMMANDS.md                      Complete command reference
+docs/CONFIGURATION.md                 Complete configuration reference
+docs/FOLLOW_MODE.md                   Follow behavior and limitations
 docs/PATHFINDING_SCAFFOLDING.md       Scaffold configuration and limitations
 ```
 
 ## Limitations
 
-Server anticheat, latency, permissions, protected regions, custom protocol behavior, and server plugins can change how movement and interaction appear. Scaffold routes may consume all configured blocks needed by the selected route and do not understand land ownership or grief-prevention rules. Test autonomous placement, looting, mining, and PvP only where they are allowed.
+Server anticheat, latency, permissions, protected regions, unloaded terrain, custom protocol behavior, and server plugins can change how movement and interactions behave. Scaffold routes do not understand land ownership or grief prevention. Follow mode cannot predict teleports beyond information exposed by the server. Combat bow aiming is line-of-sight rather than a complete latency/ballistics solver.
+
+Test autonomous placement, interaction, looting, mining, following, and PvP only where they are permitted.
