@@ -22,7 +22,7 @@ test('required documentation files exist and are linked from the README', () => 
 
   for (const file of required) {
     assert.equal(fs.existsSync(path.join(ROOT, file)), true, `${file} should exist`)
-    assert.match(readme, new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${file} should be linked from README.md`)
+    assert.equal(readme.includes(file), true, `${file} should be linked from README.md`)
   }
 })
 
@@ -56,7 +56,7 @@ test('the command reference includes every built-in command', () => {
   ]
 
   for (const name of names) {
-    assert.match(commands, new RegExp(`\\\`${name}(?:[ \\`]|$)`), `missing command documentation for ${name}`)
+    assert.equal(commands.includes('`' + name), true, `missing command documentation for ${name}`)
   }
 })
 
