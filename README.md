@@ -58,7 +58,7 @@ effect "Fire Resistance"
 | `ping` | Check responsiveness. |
 | `pos` | Show current coordinates. |
 | `queue` | Show the current and pending tasks. |
-| `plugins [info <name>|services]` | Inspect loaded plugins and service ownership. |
+| `plugins [info <name>\|services]` | Inspect loaded plugins and service ownership. |
 | `stop` | Cancel your current user task. |
 | `clear` | Clear your pending user tasks. |
 | `goto <x> <y> <z> [range]` | Pathfind to coordinates. |
