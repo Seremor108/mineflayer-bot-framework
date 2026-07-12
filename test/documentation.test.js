@@ -68,3 +68,9 @@ test('the README documents v1.6 follow priority and plugin order', () => {
   assert.match(readme, /6\. `follow`\s+7\. `commands`/)
   assert.match(readme, /follow off/)
 })
+
+test('the README escapes command alternatives inside its Markdown table', () => {
+  const readme = read('README.md')
+  assert.equal(readme.includes('`plugins [info <name>\\|services]`'), true)
+  assert.equal(readme.includes('`plugins [info <name>|services]`'), false)
+})
