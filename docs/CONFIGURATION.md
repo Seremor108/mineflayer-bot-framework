@@ -1,6 +1,6 @@
 # Configuration reference
 
-This guide documents the configuration surface of **Mineflayer Bot Framework v1.6.0**. Copy `config.example.json` to `config.json`, then edit the copy.
+This guide documents the configuration surface of **Mineflayer Bot Framework v1.6.2**. Copy `config.example.json` to `config.json`, then edit the copy.
 
 ```bash
 cp config.example.json config.json

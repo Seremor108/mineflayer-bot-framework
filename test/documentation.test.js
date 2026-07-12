@@ -62,6 +62,15 @@ test('the command reference includes every built-in command', () => {
   }
 })
 
+test('general documentation labels match the package version', () => {
+  const version = require('../package.json').version
+  const expected = `Mineflayer Bot Framework v${version}`
+
+  for (const file of ['COMMANDS.md', 'docs/COMMANDS.md', 'docs/CONFIGURATION.md']) {
+    assert.equal(read(file).includes(expected), true, `${file} should identify ${expected}`)
+  }
+})
+
 test('the README documents v1.6 follow priority and plugin order', () => {
   const readme = read('README.md')
   assert.match(readme, /persistent follow mode: `10`/)

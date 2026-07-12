@@ -1,4 +1,4 @@
-name: Validate v1.6.1
+name: Validate and package
 
 on:
   push:
@@ -11,21 +11,27 @@ permissions:
   contents: read
 
 jobs:
-  test-and-package:
+  validate:
+    name: Validate on Node.js ${{ matrix.node-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies from the public registry
-        run: |
-          rm -f package-lock.json
-          npm install
+      - name: Install locked dependencies
+        run: npm ci
 
       - name: Check syntax and configuration
         run: |
@@ -35,21 +41,39 @@ jobs:
       - name: Run tests
         run: npm test
 
+  package:
+    name: Build release archive
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Read package version
+        id: package
+        run: node -p "'version=' + require('./package.json').version" >> "$GITHUB_OUTPUT"
+
       - name: Build release archive
         run: |
-          mkdir -p dist/mineflayer-bot-framework-v1.6.1
-          rsync -a ./ dist/mineflayer-bot-framework-v1.6.1/ \
+          release_name="mineflayer-bot-framework-v${{ steps.package.outputs.version }}"
+          mkdir -p "dist/$release_name"
+          rsync -a ./ "dist/$release_name/" \
             --exclude .git \
             --exclude .github \
             --exclude dist \
             --exclude node_modules \
             --exclude config.json
-          cd dist
-          zip -qr mineflayer-bot-framework-v1.6.1.zip mineflayer-bot-framework-v1.6.1
+          (cd dist && zip -qr "$release_name.zip" "$release_name")
 
       - name: Upload release archive
         uses: actions/upload-artifact@v4
         with:
-          name: mineflayer-bot-framework-v1.6.1
-          path: dist/mineflayer-bot-framework-v1.6.1.zip
+          name: mineflayer-bot-framework-v${{ steps.package.outputs.version }}
+          path: dist/mineflayer-bot-framework-v${{ steps.package.outputs.version }}.zip
           if-no-files-found: error
