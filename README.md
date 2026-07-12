@@ -43,6 +43,8 @@ Private messages are accepted by default and may omit the command prefix:
 
 Restrict command access with `allowedUsers`. An empty list permits any player. Public commands remain disabled unless `plugins.commands.acceptPublic` is enabled.
 
+Set `plugins.commands.sendPrivateReplies` to `false` to let AllowedUsers issue private commands without receiving ordinary confirmations, errors, or task notifications. Commands such as `follow me` still execute; status queries such as `follow status`, `pos`, and `queue` still reply. The default is `true`.
+
 Quoted arguments are supported:
 
 ```text

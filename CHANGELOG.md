@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.2
+
+- Added the persistent `plugins.commands.sendPrivateReplies` setting, enabled by default.
+- When disabled, AllowedUser private-message commands still execute but ordinary confirmations, errors, and queued-task notifications are suppressed.
+- Kept private status reports available for responsiveness, position, queue, effects, follow, teammate, PvP, social, and autonomy state queries.
+- Kept public-chat command replies unchanged.
+- Added regression tests for macro-style `follow me`, status-report exceptions, queued task execution, and public replies.
+
 ## 1.6.1
 
 - Changed missing-water fire escape failures into a passed task result instead of a thrown task exception.

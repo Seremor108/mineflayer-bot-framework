@@ -48,12 +48,14 @@ class AutonomyService {
     this.unregisterLoot = commands.register('loot', {
       description: 'Toggle autonomous chest looting.',
       usage: '!loot [on|off|status]',
+      statusReport: ({ args }) => !args[0] || String(args[0]).toLowerCase() === 'status',
       run: ({ args }) => this.toggle('chestLooting', args[0])
     })
     this.unregisterToss = commands.register('tossjunk', {
       aliases: ['autotoss'],
       description: 'Toggle automatic configured-item disposal when inventory is full.',
       usage: '!tossjunk [on|off|status]',
+      statusReport: ({ args }) => !args[0] || String(args[0]).toLowerCase() === 'status',
       run: ({ args }) => this.toggle('inventoryToss', args[0])
     })
   }
