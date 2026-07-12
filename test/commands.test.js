@@ -114,8 +114,28 @@ test('executes private commands without ordinary replies when private replies ar
   assert.equal(await commands.executeInput('Alice', 'unknown-macro-command', 'whisper'), true)
   assert.deepEqual(bot.sentWhispers, [])
 
+  assert.equal(await commands.executeInput('Alice', 'follow "me', 'whisper'), true)
+  assert.deepEqual(bot.sentWhispers, [])
+
+  commands.register('fail-now', {
+    async run () { throw new Error('Immediate failure.') }
+  })
+  assert.equal(await commands.executeInput('Alice', 'fail-now', 'whisper'), true)
+  assert.deepEqual(bot.sentWhispers, [])
+
   assert.equal(await commands.executeInput('Alice', 'follow status', 'whisper'), true)
   assert.deepEqual(bot.sentWhispers, [{ username: 'Alice', message: 'Follow mode: on.' }])
+
+  commands.register('pos', {
+    aliases: ['position'],
+    statusReport: true,
+    async run () { return 'Position: 1.0, 2.0, 3.0.' }
+  })
+  assert.equal(await commands.executeInput('Alice', 'PoSiTiOn', 'whisper'), true)
+  assert.deepEqual(bot.sentWhispers.at(-1), {
+    username: 'Alice',
+    message: 'Position: 1.0, 2.0, 3.0.'
+  })
 
   commands.dispose()
   await queue.dispose()
@@ -170,6 +190,130 @@ test('private reply setting does not suppress public command replies', async () 
 
   assert.equal(await commands.executeInput('Alice', '!say-result', 'chat'), true)
   assert.deepEqual(bot.sentChat, ['Public result.'])
+
+  commands.dispose()
+  await queue.dispose()
+})
+
+test('suppresses private task failure and cancellation notices', async () => {
+  const bot = createBot()
+  const queue = new TaskQueue({ logger: createLogger() })
+  const commands = createCommandService(bot, { allowedUsers: ['Alice'] }, createLogger(), queue, {
+    sendPrivateReplies: false,
+    notifyTaskCompletion: true
+  })
+
+  commands.register('fail-task', {
+    createTask () {
+      return { name: 'failing task', async run () { throw new Error('Expected failure.') } }
+    }
+  })
+
+  const failed = once(queue, 'failed')
+  await commands.executeInput('Alice', 'fail-task', 'whisper')
+  await failed
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(bot.sentWhispers, [])
+
+  commands.register('cancel-task', {
+    createTask () {
+      return {
+        name: 'cancellable task',
+        async run ({ signal }) {
+          await new Promise((resolve, reject) => {
+            signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+          })
+        }
+      }
+    }
+  })
+
+  const started = once(queue, 'started')
+  await commands.executeInput('Alice', 'cancel-task', 'whisper')
+  await started
+  const cancelled = once(queue, 'cancelled')
+  assert.equal(queue.cancelCurrent('Expected cancellation.'), true)
+  await cancelled
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(bot.sentWhispers, [])
+
+  commands.dispose()
+  await queue.dispose()
+})
+
+test('keeps public queued-task replies enabled', async () => {
+  const bot = createBot()
+  const queue = new TaskQueue({ logger: createLogger() })
+  const commands = createCommandService(bot, {
+    commandPrefix: '!',
+    allowedUsers: ['Alice']
+  }, createLogger(), queue, {
+    acceptPublic: true,
+    sendPrivateReplies: false,
+    notifyTaskCompletion: true
+  })
+
+  commands.register('public-task', {
+    createTask () {
+      return { name: 'public task', async run () { return 'Done.' } }
+    }
+  })
+
+  const completed = once(queue, 'completed')
+  await commands.executeInput('Alice', '!public-task', 'chat')
+  await completed
+  await new Promise(resolve => setImmediate(resolve))
+
+  assert.match(bot.sentChat[0], /^Queued #\d+: public task\.$/)
+  assert.match(bot.sentChat[1], /^Task #\d+ completed\. Done\.$/)
+
+  commands.dispose()
+  await queue.dispose()
+})
+
+test('applies private reply suppression through the whisper event handler', async () => {
+  const bot = createBot()
+  const queue = new TaskQueue({ logger: createLogger() })
+  const commands = createCommandService(bot, { allowedUsers: ['Alice'] }, createLogger(), queue, {
+    acceptWhispers: true,
+    sendPrivateReplies: false
+  })
+  let resolveRan
+  const ran = new Promise(resolve => { resolveRan = resolve })
+
+  commands.register('macro-event', {
+    async run () {
+      resolveRan()
+      return 'Macro event ran.'
+    }
+  })
+
+  bot.emit('whisper', 'Alice', 'macro-event')
+  await ran
+  await new Promise(resolve => setImmediate(resolve))
+
+  assert.deepEqual(bot.sentWhispers, [])
+
+  commands.dispose()
+  await queue.dispose()
+})
+
+test('contains status-report policy errors without leaking private replies', async () => {
+  const bot = createBot()
+  const queue = new TaskQueue({ logger: createLogger() })
+  const commands = createCommandService(bot, { allowedUsers: ['Alice'] }, createLogger(), queue, {
+    sendPrivateReplies: false
+  })
+  let ran = false
+
+  commands.register('broken-policy', {
+    statusReport () { throw new Error('Broken policy.') },
+    async run () { ran = true }
+  })
+
+  assert.equal(await commands.executeInput('Alice', 'broken-policy', 'whisper'), true)
+  assert.equal(ran, false)
+  assert.deepEqual(bot.sentWhispers, [])
 
   commands.dispose()
   await queue.dispose()

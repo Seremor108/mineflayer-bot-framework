@@ -61,6 +61,8 @@ Prefer `context.on` and `context.once` to calling `bot.on` directly. Register cl
 
 An immediate command defines `run(context)`. A queued command defines `createTask(context)` and returns a task with an asynchronous `run({ signal })` function. Long-running work should observe the supplied `AbortSignal` so safety or PvP tasks can interrupt it.
 
+Commands that only report state may set `statusReport: true` or provide a `statusReport({ args })` predicate. A successful status report may reply privately even when `plugins.commands.sendPrivateReplies` is disabled; command and task errors remain suppressed.
+
 ```js
 const unregister = commands.register('waitabit', {
   createTask () {

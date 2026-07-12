@@ -1,6 +1,7 @@
 'use strict'
 
 const { Vec3 } = require('vec3')
+const { isSocialStatus } = require('./status-report-policy')
 
 class SocialService {
   constructor ({ bot, tasks, actions, pvp, commands, config = {}, logger = console }) {
@@ -47,11 +48,7 @@ class SocialService {
     this.unregisterCommand = commands?.register('social', {
       description: 'Toggle or inspect social behaviors.',
       usage: '!social [stare|mimic] [on|off|status]',
-      statusReport: ({ args }) => {
-        const behavior = String(args[0] || 'status').toLowerCase()
-        const mode = String(args[1] || 'status').toLowerCase()
-        return behavior === 'status' || mode === 'status'
-      },
+      statusReport: isSocialStatus,
       run: ({ args }) => this.handleCommand(args)
     })
   }
