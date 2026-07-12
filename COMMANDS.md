@@ -1,6 +1,6 @@
 # Mineflayer Bot Command Reference
 
-This document describes every chat command included in **Mineflayer Bot Framework v1.3.0**.
+This document describes every chat command included in **Mineflayer Bot Framework v1.6.2**.
 
 ## Sending commands
 
