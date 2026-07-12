@@ -265,6 +265,8 @@ npm run plugin:validate
 npm run plugin:test -- plugins/my-plugin.js
 ```
 
+The disabled `example-*.js` plugins demonstrate immediate commands, queued tasks, Mineflayer events, configuration, cleanup, and shared services. They are commented templates intended to be copied and renamed.
+
 See [Plugin authoring and developer tools](docs/PLUGINS.md) for lifecycle, context, cleanup, command, task, configuration, diagnostics, and testing guidance.
 
 ## Development
@@ -280,6 +282,7 @@ The suite covers task interruption and resumption, command parsing, plugin clean
 
 ```text
 plugins/                              User plugins
+plugins/example-*.js                 Disabled, commented templates for plugin authors
 src/index.js                          Connection and lifecycle
 src/plugin-manager.js                 Plugin loading and shared services
 src/task-queue.js                     Priority queue and interruption

@@ -75,6 +75,10 @@ Persistent follow mode is not a normal user task. `stop` and `clear` do not disa
 | `loot [on\|off\|status]` | — | Immediate | Toggle autonomous chest looting. |
 | `tossjunk [on\|off\|status]` | `autotoss` | Immediate | Toggle full-inventory disposal. |
 | `hello` | — | Immediate | Example user-plugin command, disabled by default. |
+| `example-echo <text>` | `example-say` | Immediate | Immediate-command example, disabled by default. |
+| `example-greet` | — | Immediate | Configurable-command example, disabled by default. |
+| `example-wait [milliseconds]` | — | Queued | Cancellable-task example, disabled by default. |
+| `example-time` | — | Immediate | Shared-service example, disabled by default. |
 
 ## General commands
 
@@ -459,7 +463,7 @@ Controls disposal of configured items when the inventory is full. This is a runt
 
 Projectile dodging, eating, animal interactions, and ore mining currently have configuration toggles but no chat commands.
 
-## Example plugin command
+## Example plugin commands
 
 ### `hello`
 
@@ -470,6 +474,17 @@ hello
 ```
 
 When enabled, it replies with the configured example message and the sender’s username.
+
+The more extensively commented `example-*.js` plugins add the following commands when their matching configuration entries are enabled:
+
+| Command | Example plugin | Demonstrates |
+| --- | --- | --- |
+| `example-echo <text>` | `example-command` | Immediate commands, aliases, arguments, replies, and cleanup. |
+| `example-greet` | `example-config` | Reading plugin-specific configuration. |
+| `example-wait [milliseconds]` | `example-queued-task` | Serialized, cancellable tasks. |
+| `example-time` | `example-service-user` | Consuming the `exampleClock` service from `example-service-provider`. |
+
+See [Plugin authoring](PLUGINS.md) before enabling or copying these examples.
 
 ## Plugin availability
 
@@ -485,5 +500,6 @@ Commands register only when their providing plugin loads successfully.
 | `social` | `social` |
 | `loot`, `tossjunk` | `autonomy` |
 | `hello` | disabled example user plugin |
+| `example-echo`, `example-greet`, `example-wait`, `example-time` | disabled copyable example plugins |
 
 Use `help` on the running bot for the exact command set available under its current configuration.

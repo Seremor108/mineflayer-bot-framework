@@ -12,6 +12,23 @@ npm run plugin:test -- plugins/greeting.js
 
 `plugin:create` generates a minimal listener plugin. `plugin:validate` loads plugin modules and applies the same structural validation used by the runtime. `plugin:test` performs a lifecycle smoke test with a mock bot and command service, then verifies that services and commands are cleaned up.
 
+## Copyable example plugins
+
+The repository includes deliberately barebones examples in `plugins/`. Every example is disabled by default in `config.example.json`; copy one to a new filename, change its exported `name`, add a matching configuration entry, and then enable your copy.
+
+| File | Pattern demonstrated |
+| --- | --- |
+| `example-command.js` | Immediate commands, arguments, automatic replies, aliases, and unregister cleanup. |
+| `example-config.js` | Defaults and values from `context.pluginConfig`. |
+| `example-events.js` | Mineflayer events, plugin logging, timers, and lifecycle cleanup. |
+| `example-queued-task.js` | Serialized work, task metadata, cancellation, `AbortSignal`, and abort-aware sleeping. |
+| `example-service-provider.js` | Publishing a read-only shared service. |
+| `example-service-user.js` | Requiring another plugin's service and exposing it through a status command. |
+
+To try an example, copy `config.example.json` to `config.json`, set that example's `enabled` value to `true`, and restart the bot. The service-user example also requires `example-service-provider` to be enabled. User plugins load alphabetically by filename, which ensures the included provider loads before its consumer.
+
+The examples favor comments and explicit cleanup over brevity. Delete comments you no longer need after copying them, but keep the cleanup calls and cancellation handling relevant to your plugin.
+
 ## Plugin contract
 
 Every plugin exports an object with a valid `name` and `setup(context)` function:
@@ -56,6 +73,15 @@ Names may contain letters, numbers, hyphens, and underscores and must begin with
 | `listServices()` | Return service names and provider plugin names. |
 
 Prefer `context.on` and `context.once` to calling `bot.on` directly. Register cleanup for commands, timers, files, sockets, and other resources that the context cannot track itself.
+
+### Finding framework elements
+
+- Use `context.bot` for Mineflayer state and APIs such as entities, inventory, chat, and world blocks.
+- Use `context.pluginConfig` for your plugin's own settings. `context.config` exposes the complete root configuration when integration with a global option is genuinely required.
+- Use `context.requireService('commands')` to register commands and `context.requireService('tasks')` or `context.requireService('actions')` for lower-level queue/action integration.
+- Optional built-in services include `statusEffects`, `teams`, `pvp`, `follow`, `social`, and `autonomy`. Retrieve optional integrations with `getService` so your plugin can still load when their providers are disabled.
+- Run `plugins services` as an AllowedUser to see service names and their provider plugins in a live bot.
+- Inspect `src/plugins/` to see how built-ins connect services, then inspect the corresponding `src/*-service.js` file for the methods that service exposes.
 
 ## Commands and tasks
 

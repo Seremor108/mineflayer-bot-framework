@@ -54,7 +54,11 @@ test('the command reference includes every built-in command', () => {
     'social',
     'loot',
     'tossjunk',
-    'hello'
+    'hello',
+    'example-echo',
+    'example-greet',
+    'example-wait',
+    'example-time'
   ]
 
   for (const name of names) {

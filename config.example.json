@@ -284,6 +284,27 @@
     "hello": {
       "enabled": false,
       "message": "Hello from a custom plugin!"
+    },
+    "example-command": {
+      "enabled": false
+    },
+    "example-config": {
+      "enabled": false,
+      "greeting": "Hello from a configurable plugin",
+      "includeUsername": true
+    },
+    "example-events": {
+      "enabled": false,
+      "heartbeatMs": 30000
+    },
+    "example-queued-task": {
+      "enabled": false
+    },
+    "example-service-provider": {
+      "enabled": false
+    },
+    "example-service-user": {
+      "enabled": false
     }
   },
   "reconnect": {
