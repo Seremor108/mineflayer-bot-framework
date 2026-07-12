@@ -118,7 +118,7 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
           }
         })
 
-        reply(`Queued #${handle.id}: ${taskSpec.name || command.name}.`)
+        ordinaryReply(`Queued #${handle.id}: ${taskSpec.name || command.name}.`)
 
         handle.promise.then(result => {
           if (!notifyTaskCompletion || taskSpec.notifyCompletion === false) return
@@ -127,9 +127,9 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
         }).catch(error => {
           if (!notifyTaskCompletion || taskSpec.notifyCompletion === false) return
           if (error instanceof TaskCancelledError || error instanceof TaskInterruptedError) {
-            reply(`Task #${handle.id} cancelled: ${error.message}`)
+            ordinaryReply(`Task #${handle.id} cancelled: ${error.message}`)
           } else {
-            reply(`Task #${handle.id} failed: ${error.message}`)
+            ordinaryReply(`Task #${handle.id} failed: ${error.message}`)
           }
         })
       } else {
@@ -138,7 +138,7 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
       }
     } catch (error) {
       logger.error(`[command:${command.name}]`, error)
-      reply(`Command failed: ${error.message}`)
+      ordinaryReply(`Command failed: ${error.message}`)
     }
 
     return true

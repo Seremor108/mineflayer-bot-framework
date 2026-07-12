@@ -2,6 +2,13 @@
 
 const { createCommandService } = require('../commands')
 const { normalizeDestination } = require('../action-service')
+const {
+  isEffectStatus,
+  isFollowStatus,
+  isPluginStatus,
+  isPvpStatus,
+  isTeammateStatus
+} = require('../status-report-policy')
 
 module.exports = {
   name: 'commands',
@@ -80,6 +87,7 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
     commands.register('plugins', {
       description: 'Inspect loaded plugins and the services they provide.',
       usage: '!plugins [info <name>|services]',
+      statusReport: isPluginStatus,
       async run ({ args, username }) {
         if (!plugins.canInspect(username)) {
           throw new Error('Plugin diagnostics require an explicit allowedUsers entry.')
@@ -164,7 +172,7 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
       aliases: ['followplayer'],
       description: 'Start, stop, toggle, or inspect persistent player-follow mode.',
       usage: '!follow [player|me|on|off|toggle|status] [range]',
-      statusReport: ({ args }) => !args[0] || ['status', 'state'].includes(String(args[0]).toLowerCase()),
+      statusReport: isFollowStatus,
       async run ({ args, username }) {
         const request = parseFollowCommand(args, username)
 
@@ -310,7 +318,7 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
       aliases: ['status'],
       description: 'Check whether a status effect is currently applied.',
       usage: '!effect <name|id>',
-      statusReport: true,
+      statusReport: isEffectStatus,
       async run ({ args }) {
         requireArgs(args, 1, 'effect <name|id>')
         const query = args.join(' ')
@@ -327,7 +335,7 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
       aliases: ['team'],
       description: 'Manage the custom teammate list; "near" replaces it with players within seven blocks.',
       usage: '!teammates <near|list|clear> [radius]',
-      statusReport: ({ args }) => !args[0] || String(args[0]).toLowerCase() === 'list',
+      statusReport: isTeammateStatus,
       async run ({ args }) {
         const operation = String(args[0] || 'list').toLowerCase()
         if (operation === 'near') {
@@ -354,7 +362,7 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
     commands.register('pvp', {
       description: 'Set PvP mode on, off, or back to automatic entry-point rules.',
       usage: '!pvp [on|off|auto|status]',
-      statusReport: ({ args }) => !args[0] || String(args[0]).toLowerCase() === 'status',
+      statusReport: isPvpStatus,
       async run ({ args }) {
         const mode = String(args[0] || 'status').toLowerCase()
         const status = mode === 'status' ? pvp.getStatus() : pvp.setMode(mode)

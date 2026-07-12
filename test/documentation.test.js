@@ -69,8 +69,26 @@ test('the README documents v1.6 follow priority and plugin order', () => {
   assert.match(readme, /follow off/)
 })
 
-test('the README escapes command alternatives inside its Markdown table', () => {
+test('README Markdown tables have consistent unescaped column separators', () => {
   const readme = read('README.md')
-  assert.equal(readme.includes('`plugins [info <name>\\|services]`'), true)
-  assert.equal(readme.includes('`plugins [info <name>|services]`'), false)
+  let expectedSeparators = null
+
+  for (const [index, line] of readme.split('\n').entries()) {
+    if (!line.trimStart().startsWith('|')) {
+      expectedSeparators = null
+      continue
+    }
+
+    const separators = countUnescapedPipes(line)
+    if (expectedSeparators === null) expectedSeparators = separators
+    assert.equal(separators, expectedSeparators, `README.md:${index + 1} has inconsistent table columns`)
+  }
 })
+
+function countUnescapedPipes (line) {
+  let count = 0
+  for (let index = 0; index < line.length; index += 1) {
+    if (line[index] === '|' && line[index - 1] !== '\\') count += 1
+  }
+  return count
+}
