@@ -47,6 +47,11 @@ class SocialService {
     this.unregisterCommand = commands?.register('social', {
       description: 'Toggle or inspect social behaviors.',
       usage: '!social [stare|mimic] [on|off|status]',
+      statusReport: ({ args }) => {
+        const behavior = String(args[0] || 'status').toLowerCase()
+        const mode = String(args[1] || 'status').toLowerCase()
+        return behavior === 'status' || mode === 'status'
+      },
       run: ({ args }) => this.handleCommand(args)
     })
   }

@@ -86,6 +86,7 @@
       "acceptWhispers": true,
       "acceptPublic": false,
       "whisperPrefixOptional": true,
+      "sendPrivateReplies": true,
       "notifyTaskCompletion": true
     },
     "social": {

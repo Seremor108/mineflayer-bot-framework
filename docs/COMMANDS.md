@@ -1,6 +1,6 @@
 # Command reference
 
-This document describes every chat command included in **Mineflayer Bot Framework v1.6.0**.
+This document describes every chat command included in **Mineflayer Bot Framework v1.6.2**.
 
 ## Sending commands
 
@@ -36,11 +36,13 @@ Backslashes escape the following character. An unclosed quote produces a parse e
 "allowedUsers": ["YourMinecraftName"]
 ```
 
-Direct-message commands receive direct-message replies. Public commands receive public-chat replies. Messages sent by the bot itself are ignored.
+Direct-message commands receive direct-message replies by default. Set `plugins.commands.sendPrivateReplies` to `false` to suppress ordinary private replies without disabling or changing the command itself. This is useful when an AllowedUser sends commands through a macro and does not need confirmations.
+
+Status reports continue replying privately while ordinary replies are suppressed. These include `ping`, `pos`, `queue`, `effect`, and the status/list forms of `follow`, `teammates`, `pvp`, `social`, `loot`, and `tossjunk`. Parse errors, unknown-command errors, command confirmations, queued-task notices, completion notices, cancellation notices, and failure notices are suppressed. Public-chat replies are unaffected. Messages sent by the bot itself are ignored.
 
 ## Task behavior
 
-Queued commands report their task number immediately. When `plugins.commands.notifyTaskCompletion` is enabled, the bot also reports completion, cancellation, or failure.
+Queued commands report their task number immediately when replies are enabled. When `plugins.commands.notifyTaskCompletion` is enabled, the bot also reports completion, cancellation, or failure unless private replies are suppressed.
 
 Persistent follow mode is not a normal user task. `stop` and `clear` do not disable it; use `follow off`.
 

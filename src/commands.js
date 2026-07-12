@@ -13,6 +13,7 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
   const acceptPublic = Boolean(pluginConfig.acceptPublic)
   const whisperPrefixOptional = pluginConfig.whisperPrefixOptional !== false
   const notifyTaskCompletion = pluginConfig.notifyTaskCompletion !== false
+  const sendPrivateReplies = pluginConfig.sendPrivateReplies !== false
   const commands = new Map()
   const primaryCommands = new Map()
 
@@ -56,13 +57,13 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
 
     if (!input) return false
 
-    const reply = createReply(bot, username, channel, logger)
+    const ordinaryReply = createReply(bot, username, channel, logger, sendPrivateReplies)
     let tokens
 
     try {
       tokens = tokenizeCommandLine(input)
     } catch (error) {
-      reply(`Could not parse command: ${error.message}`)
+      ordinaryReply(`Could not parse command: ${error.message}`)
       return true
     }
 
@@ -71,9 +72,19 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
     const command = commands.get(commandName)
 
     if (!command) {
-      reply(`Unknown command "${rawName}". Use ${prefix}help.`)
+      ordinaryReply(`Unknown command "${rawName}". Use ${prefix}help.`)
       return true
     }
+
+    let statusReport = false
+    try {
+      statusReport = isStatusReport(command, { username, args, channel, raw: input })
+    } catch (error) {
+      logger.error(`[command:${command.name}:status-report]`, error)
+      ordinaryReply(`Command failed: ${error.message}`)
+      return true
+    }
+    const reply = createReply(bot, username, channel, logger, sendPrivateReplies || statusReport)
 
     const commandContext = Object.freeze({
       bot,
@@ -151,6 +162,7 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
       aliases: Object.freeze(aliases),
       description: command.description || 'No description provided.',
       usage: command.usage || `${prefix}${normalizedName}`,
+      statusReport: command.statusReport,
       run: command.run,
       createTask: command.createTask
     })
@@ -186,18 +198,28 @@ function createCommandService (bot, config, logger, taskQueue, pluginConfig = {}
   return service
 }
 
-function createReply (bot, username, channel, logger) {
+function createReply (bot, username, channel, logger, allowPrivateReply = true) {
   return text => {
+    if (channel === 'whisper' && !allowPrivateReply) return false
+
     try {
       if (channel === 'whisper' && typeof bot.whisper === 'function') {
         bot.whisper(username, String(text))
       } else {
         bot.chat(String(text))
       }
+      return true
     } catch (error) {
       logger.warn(`Could not reply to ${username}:`, error.message)
+      return false
     }
   }
+}
+
+function isStatusReport (command, context) {
+  if (command.statusReport === true) return true
+  if (typeof command.statusReport === 'function') return Boolean(command.statusReport(context))
+  return false
 }
 
 function tokenizeCommandLine (input) {

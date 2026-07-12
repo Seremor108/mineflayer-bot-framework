@@ -251,6 +251,7 @@ See [Follow player mode](FOLLOW_MODE.md).
   "acceptWhispers": true,
   "acceptPublic": false,
   "whisperPrefixOptional": true,
+  "sendPrivateReplies": true,
   "notifyTaskCompletion": true
 }
 ```
@@ -260,7 +261,8 @@ See [Follow player mode](FOLLOW_MODE.md).
 | `acceptWhispers` | `true` | Accept direct-message commands. |
 | `acceptPublic` | `false` | Accept commands from public chat. |
 | `whisperPrefixOptional` | `true` | Permit prefix-free direct-message commands. |
-| `notifyTaskCompletion` | `true` | Send completion/failure/cancellation replies for queued user commands. |
+| `sendPrivateReplies` | `true` | Send ordinary replies to private-message commands. When `false`, commands still execute and status reports still reply. |
+| `notifyTaskCompletion` | `true` | Send completion/failure/cancellation replies for queued user commands when private replies are enabled or the command came from public chat. |
 
 The root `commandPrefix` and `allowedUsers` options also affect this plugin. See [Command reference](COMMANDS.md).
 
