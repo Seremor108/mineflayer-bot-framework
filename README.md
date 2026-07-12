@@ -24,6 +24,7 @@ For an offline-mode server, use `"auth": "offline"`. For a Microsoft account, us
 
 - [Complete command reference](docs/COMMANDS.md)
 - [Complete configuration reference](docs/CONFIGURATION.md)
+- [Plugin authoring and developer tools](docs/PLUGINS.md)
 - [Follow player mode](docs/FOLLOW_MODE.md)
 - [Scaffold-assisted pathfinding](docs/PATHFINDING_SCAFFOLDING.md)
 - [Changelog](CHANGELOG.md)
@@ -55,6 +56,7 @@ effect "Fire Resistance"
 | `ping` | Check responsiveness. |
 | `pos` | Show current coordinates. |
 | `queue` | Show the current and pending tasks. |
+| `plugins [info <name>|services]` | Inspect loaded plugins and service ownership. |
 | `stop` | Cancel your current user task. |
 | `clear` | Clear your pending user tasks. |
 | `goto <x> <y> <z> [range]` | Pathfind to coordinates. |
@@ -252,6 +254,16 @@ module.exports = {
 ```
 
 Context provides `bot`, complete `config`, frozen `pluginConfig`, a prefixed logger, tracked `on`/`once`, `addCleanup`, and shared-service methods `provideService`, `getService`, and `requireService`.
+
+Plugin authors can scaffold, validate, and smoke-test user plugins without connecting to Minecraft:
+
+```bash
+npm run plugin:create -- my-plugin
+npm run plugin:validate
+npm run plugin:test -- plugins/my-plugin.js
+```
+
+See [Plugin authoring and developer tools](docs/PLUGINS.md) for lifecycle, context, cleanup, command, task, configuration, diagnostics, and testing guidance.
 
 ## Development
 

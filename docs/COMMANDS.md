@@ -52,6 +52,7 @@ Persistent follow mode is not a normal user task. `stop` and `clear` do not disa
 | `ping` | — | Immediate | Check responsiveness. |
 | `pos` | `position` | Immediate | Report current coordinates. |
 | `queue` | `tasks` | Immediate | Show the running task and pending queue. |
+| `plugins [info <name>\|services]` | — | Immediate | Inspect loaded plugins and service ownership. |
 | `stop` | `cancel` | Immediate | Cancel your currently running user task. |
 | `clear` | — | Immediate | Remove your pending user tasks. |
 | `goto <x> <y> <z> [range]` | `go` | Queued | Pathfind to coordinates. |
@@ -107,6 +108,18 @@ position
 ```
 
 ## Queue commands
+
+### `plugins [info <name>|services]`
+
+Lists loaded plugins and their lifecycle states. `plugins info <name>` reports the plugin source and the services it owns. `plugins services` lists every registered service and its provider. Service values are never displayed.
+
+```text
+plugins
+plugins info autonomy
+plugins services
+```
+
+Plugin diagnostics require the sender to have an explicit entry in `allowedUsers`. They remain unavailable when `allowedUsers` is empty, even though other commands accept any sender in that configuration.
 
 ### `queue`
 
