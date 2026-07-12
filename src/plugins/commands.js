@@ -30,7 +30,7 @@ module.exports = {
 }
 
 function registerBuiltInCommands (commands, tasks, actions, services = {}) {
-  const { statusEffects, teams, pvp, follow } = services
+  const { statusEffects, teams, pvp, follow, plugins } = services
   commands.register('help', {
     description: 'List commands or explain one command.',
     usage: '!help [command]',
@@ -72,6 +72,40 @@ function registerBuiltInCommands (commands, tasks, actions, services = {}) {
       return `${current}. ${pending}.`
     }
   })
+
+  if (plugins) {
+    commands.register('plugins', {
+      description: 'Inspect loaded plugins and the services they provide.',
+      usage: '!plugins [info <name>|services]',
+      async run ({ args, username }) {
+        if (!plugins.canInspect(username)) {
+          throw new Error('Plugin diagnostics require an explicit allowedUsers entry.')
+        }
+        const operation = String(args[0] || 'list').toLowerCase()
+
+        if (operation === 'services') {
+          const registered = plugins.listServices()
+          return registered.length > 0
+            ? `Services: ${registered.map(service => `${service.name} (${service.owner})`).join(', ')}.`
+            : 'Services: none.'
+        }
+
+        if (operation === 'info') {
+          const name = String(args[1] || '').trim()
+          if (!name) throw new Error('Usage: plugins info <name>')
+          const plugin = plugins.describe(name)
+          if (!plugin) return `Plugin "${name}" is not loaded.`
+          return `Plugin ${plugin.name}: ${plugin.status}; source: ${plugin.source}; services: ${plugin.services.join(', ') || 'none'}.`
+        }
+
+        if (operation !== 'list') throw new Error('Usage: plugins [info <name>|services]')
+        const loaded = plugins.list()
+        return loaded.length > 0
+          ? `Plugins: ${loaded.map(plugin => `${plugin.name} (${plugin.status})`).join(', ')}.`
+          : 'Plugins: none.'
+      }
+    })
+  }
 
   commands.register('stop', {
     aliases: ['cancel'],

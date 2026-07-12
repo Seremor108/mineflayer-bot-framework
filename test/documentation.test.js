@@ -16,6 +16,7 @@ test('required documentation files exist and are linked from the README', () => 
   const required = [
     'docs/COMMANDS.md',
     'docs/CONFIGURATION.md',
+    'docs/PLUGINS.md',
     'docs/FOLLOW_MODE.md',
     'docs/PATHFINDING_SCAFFOLDING.md'
   ]
@@ -33,6 +34,7 @@ test('the command reference includes every built-in command', () => {
     'ping',
     'pos',
     'queue',
+    'plugins',
     'stop',
     'clear',
     'goto',

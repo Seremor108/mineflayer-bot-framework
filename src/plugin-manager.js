@@ -2,6 +2,7 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
+const { normalizePluginModule, validatePlugin } = require('./plugin-validation')
 
 class PluginManager {
   constructor ({ bot, config = {}, rootDir = process.cwd(), logger = console }) {
@@ -19,9 +20,7 @@ class PluginManager {
   async load (pluginModule, source = 'inline') {
     if (this.disposed) throw new Error('Cannot load plugins after the plugin manager has been disposed.')
 
-    const plugin = pluginModule && pluginModule.default
-      ? pluginModule.default
-      : pluginModule
+    const plugin = normalizePluginModule(pluginModule)
 
     validatePlugin(plugin, source)
 
@@ -135,6 +134,28 @@ class PluginManager {
     }))
   }
 
+  describe (name) {
+    const record = this.plugins.get(name)
+    if (!record) return null
+
+    return {
+      name,
+      source: record.source,
+      status: record.status,
+      services: [...this.services.entries()]
+        .filter(([, service]) => service.owner === name)
+        .map(([serviceName]) => serviceName)
+        .sort()
+    }
+  }
+
+  listServices () {
+    return [...this.services.entries()].map(([name, service]) => ({
+      name,
+      owner: service.owner
+    })).sort((left, right) => left.name.localeCompare(right.name))
+  }
+
   createContext (pluginName, pluginConfig, cleanups) {
     const logger = createPluginLogger(this.logger, pluginName)
 
@@ -209,26 +230,11 @@ class PluginManager {
       once,
       provideService,
       getService,
-      requireService
+      requireService,
+      listPlugins: () => this.list(),
+      describePlugin: name => this.describe(name),
+      listServices: () => this.listServices()
     })
-  }
-}
-
-function validatePlugin (plugin, source) {
-  if (!plugin || typeof plugin !== 'object') {
-    throw new TypeError(`Plugin from ${source} must export an object.`)
-  }
-
-  if (!plugin.name || typeof plugin.name !== 'string') {
-    throw new TypeError(`Plugin from ${source} must have a non-empty string name.`)
-  }
-
-  if (!/^[a-z0-9][a-z0-9-_]*$/i.test(plugin.name)) {
-    throw new TypeError(`Plugin name "${plugin.name}" contains unsupported characters.`)
-  }
-
-  if (typeof plugin.setup !== 'function') {
-    throw new TypeError(`Plugin "${plugin.name}" must define a setup(context) function.`)
   }
 }
 

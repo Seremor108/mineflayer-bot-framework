@@ -4,6 +4,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { EventEmitter } = require('node:events')
 const { PluginManager } = require('../src/plugin-manager')
+const { validatePlugin } = require('../src/plugin-validation')
 
 function createLogger () {
   return {
@@ -96,4 +97,30 @@ test('skips plugins disabled in configuration', async () => {
   assert.equal(result, false)
   assert.equal(loaded, false)
   assert.deepEqual(manager.list(), [])
+})
+
+test('shared validation rejects invalid lifecycle hooks', () => {
+  assert.throws(
+    () => validatePlugin({ name: 'bad-teardown', setup () {}, teardown: true }, 'test'),
+    /teardown must be a function/
+  )
+})
+
+test('describes plugin-owned services without exposing service values', async () => {
+  const manager = new PluginManager({ bot: new EventEmitter(), logger: createLogger() })
+
+  await manager.load({
+    name: 'provider',
+    setup (context) { context.provideService('example', { secret: true }) }
+  })
+
+  assert.deepEqual(manager.describe('provider'), {
+    name: 'provider',
+    source: 'inline',
+    status: 'loaded',
+    services: ['example']
+  })
+  assert.deepEqual(manager.listServices(), [{ name: 'example', owner: 'provider' }])
+
+  await manager.unloadAll()
 })

@@ -20,11 +20,19 @@ module.exports = {
     context.provideService('commands', commands)
     context.addCleanup(() => commands.dispose())
 
+    const diagnosticUsers = new Set((context.config.allowedUsers || []).map(name => String(name).toLowerCase()))
+
     registerBuiltInCommands(commands, tasks, actions, {
       statusEffects: context.getService('statusEffects'),
       teams: context.getService('teams'),
       pvp: context.getService('pvp'),
-      follow: context.getService('follow')
+      follow: context.getService('follow'),
+      plugins: {
+        list: context.listPlugins,
+        describe: context.describePlugin,
+        listServices: context.listServices,
+        canInspect: username => diagnosticUsers.size > 0 && diagnosticUsers.has(String(username).toLowerCase())
+      }
     })
   }
 }
